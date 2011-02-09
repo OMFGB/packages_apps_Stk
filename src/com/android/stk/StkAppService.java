@@ -133,9 +133,9 @@ public class StkAppService extends Service implements Runnable {
 
     private static final String PACKAGE_NAME = "com.android.stk";
     private static final String MENU_ACTIVITY_NAME =
-                                        PACKAGE_NAME + ".CatMenuActivity";
+                                        PACKAGE_NAME + ".StkMenuActivity";
     private static final String INPUT_ACTIVITY_NAME =
-                                        PACKAGE_NAME + ".CatInputActivity";
+                                        PACKAGE_NAME + ".StkInputActivity";
 
     // Notification id used to display Idle Mode text in NotificationManager.
     private static final int STK_NOTIFICATION_ID = 333;
