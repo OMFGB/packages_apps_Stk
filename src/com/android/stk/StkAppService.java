@@ -55,6 +55,8 @@ import com.android.internal.telephony.GsmAlphabet;
 import java.util.LinkedList;
 
 import static com.android.internal.telephony.cat.CatCmdMessage.SetupEventListConstants.*;
+import static com.android.internal.telephony.CommandsInterface.SIM_REFRESH_INIT;
+import static com.android.internal.telephony.CommandsInterface.SIM_REFRESH_RESET;
 
 /**
  * SIM toolkit application level service. Interacts with Telephopny messages,
@@ -116,6 +118,7 @@ public class StkAppService extends Service implements Runnable {
     static final int OP_IDLE_SCREEN = 7;
     static final int OP_BROWSER_TERMINATION = 8;
     static final int OP_LOCALE_CHANGED = 9;
+    static final int OP_ICC_STATUS_CHANGE = 10;
 
     //Invalid SetupEvent
     static final int INVALID_SETUP_EVENT = 0xFF;
@@ -207,6 +210,7 @@ public class StkAppService extends Service implements Runnable {
         case OP_RESPONSE:
         case OP_BROWSER_TERMINATION:
         case OP_LOCALE_CHANGED:
+        case OP_ICC_STATUS_CHANGE:
             msg.obj = args;
             /* falls through */
         case OP_LAUNCH_APP:
@@ -348,6 +352,36 @@ public class StkAppService extends Service implements Runnable {
                 CatLog.d(this, "Locale Changed");
                 checkForSetupEvent(LANGUAGE_SELECTION_EVENT,(Bundle) msg.obj);
                 break;
+            case OP_ICC_STATUS_CHANGE:
+                CatLog.d(this, "Icc Status change received");
+                handleIccStatusChange((Bundle) msg.obj);
+                break;
+            }
+        }
+    }
+
+    private void handleIccStatusChange(Bundle args) {
+        Boolean RadioStatus = args.getBoolean("RADIO_STATUS");
+
+        if (RadioStatus == false) {
+            CatLog.d(this, "RADIO_OFF_OR_UNAVAILABLE received");
+            // Unistall STKAPP, Clear Idle text, Stop StkAppService
+            StkAppInstaller.unInstall(mContext);
+            mNotificationManager.cancel(STK_NOTIFICATION_ID);
+            stopSelf();
+        } else {
+            int refreshResult = args.getInt("REFRESH_RESULT");
+
+            CatLog.d(this, "Icc Refresh Result: "+ refreshResult);
+            if ((refreshResult == SIM_REFRESH_INIT) ||
+                (refreshResult == SIM_REFRESH_RESET)) {
+                // Clear Idle Text
+                mNotificationManager.cancel(STK_NOTIFICATION_ID);
+            }
+
+            if (refreshResult == SIM_REFRESH_RESET) {
+                // Uninstall STkmenu
+                StkAppInstaller.unInstall(mContext);
             }
         }
     }

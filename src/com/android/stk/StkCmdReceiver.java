@@ -25,6 +25,7 @@ import android.os.Bundle;
 
 import static com.android.internal.telephony.cat.CatCmdMessage.SetupEventListConstants.*;
 import static com.android.internal.telephony.cat.CatCmdMessage.BrowserTerminationCauses.*;
+import static com.android.internal.telephony.CommandsInterface.SIM_REFRESH_FILE_UPDATED;
 
 /**
  * Receiver class to get STK intents, broadcasted by telephony layer.
@@ -48,6 +49,8 @@ public class StkCmdReceiver extends BroadcastReceiver {
             handleScreenStatus(context);
         } else if (action.equals(Intent.ACTION_LOCALE_CHANGED)) {
             handleLocaleChange(context);
+        } else if (action.equals(AppInterface.CAT_ICC_STATUS_CHANGE)) {
+            handleIccStatusChange(context, intent);
         }
     }
 
@@ -89,6 +92,17 @@ public class StkCmdReceiver extends BroadcastReceiver {
     private void handleLocaleChange(Context context) {
         Bundle args = new Bundle();
         args.putInt(StkAppService.OPCODE, StkAppService.OP_LOCALE_CHANGED);
+        context.startService(new Intent(context, StkAppService.class)
+                .putExtras(args));
+    }
+
+    private void handleIccStatusChange(Context context, Intent intent) {
+        Bundle args = new Bundle();
+        args.putInt(StkAppService.OPCODE, StkAppService.OP_ICC_STATUS_CHANGE);
+        args.putBoolean("RADIO_AVAILABLE",
+                intent.getBooleanExtra("RADIO_AVAILABLE",true));
+        args.putInt("REFRESH_RESULT", intent
+                .getIntExtra("REFRESH_RESULT",SIM_REFRESH_FILE_UPDATED));
         context.startService(new Intent(context, StkAppService.class)
                 .putExtras(args));
     }

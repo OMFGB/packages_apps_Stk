@@ -79,6 +79,7 @@
                 <action android:name= "android.intent.action.stk.session_end" />
                 <action android:name= "android.intent.action.stk.browser_terminate_action" />
                 <action android:name= "android.intent.action.stk.idle_screen" />
+                <action android:name= "android.intent.action.stk.icc_status_change" />
                 <action android:name= "android.intent.action.LOCALE_CHANGED" />
             </intent-filter>
         </receiver>
