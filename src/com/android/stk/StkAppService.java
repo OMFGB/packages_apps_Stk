@@ -360,7 +360,7 @@ public class StkAppService extends Service implements Runnable {
     }
 
     private void handleIccStatusChange(Bundle args) {
-        Boolean RadioStatus = args.getBoolean("RADIO_STATUS");
+        Boolean RadioStatus = args.getBoolean("RADIO_AVAILABLE");
 
         if (RadioStatus == false) {
             CatLog.d(this, "RADIO_OFF_OR_UNAVAILABLE received");
@@ -378,11 +378,14 @@ public class StkAppService extends Service implements Runnable {
                 (state.refreshResult == IccRefreshResponse.Result.SIM_RESET)) {
                 // Clear Idle Text
                 mNotificationManager.cancel(STK_NOTIFICATION_ID);
+                mIdleModeTextCmd = null;
             }
 
             if (state.refreshResult == IccRefreshResponse.Result.SIM_RESET) {
                 // Uninstall STkmenu
                 StkAppInstaller.unInstall(mContext);
+                mCurrentMenu = null;
+                mMainCmd = null;
             }
         }
     }
@@ -512,7 +515,12 @@ public class StkAppService extends Service implements Runnable {
         switch (cmdMsg.getCmdType()) {
         case DISPLAY_TEXT:
             TextMessage msg = cmdMsg.geTextMessage();
-            responseNeeded = msg.responseNeeded;
+
+            //In case when TR already sent no response is expected by Stk app
+            if (!msg.responseNeeded) {
+                waitForUsersResponse = false;
+            }
+
             if (lastSelectedItem != null) {
                 msg.title = lastSelectedItem;
             } else if (mMainCmd != null){
@@ -533,6 +541,7 @@ public class StkAppService extends Service implements Runnable {
             if (removeMenu()) {
                 CatLog.d(this, "Uninstall App");
                 mCurrentMenu = null;
+                mMainCmd = null;
                 StkAppInstaller.unInstall(mContext);
             } else {
                 CatLog.d(this, "Install App");
@@ -570,6 +579,7 @@ public class StkAppService extends Service implements Runnable {
         case SEND_SMS:
         case SEND_SS:
         case SEND_USSD:
+            mCurrentCmd = mMainCmd;
             waitForUsersResponse = false;
             launchEventMessage();
             break;
@@ -587,7 +597,12 @@ public class StkAppService extends Service implements Runnable {
             launchConfirmationDialog(mCurrentCmd.getCallSettings().confirmMsg);
             break;
         case SET_UP_CALL:
-            launchConfirmationDialog(mCurrentCmd.getCallSettings().confirmMsg);
+            TextMessage mesg = mCurrentCmd.getCallSettings().confirmMsg;
+            if ((mesg != null) && (mesg.text == null || mesg.text.length() == 0)) {
+                mesg.text = getResources().getString(R.string.default_setup_call_msg);
+            }
+            CatLog.d(this, "SET_UP_CALL mesg.text " + mesg.text);
+            launchConfirmationDialog(mesg);
             break;
         case PLAY_TONE:
             launchToneDialog();
