@@ -51,12 +51,11 @@ import com.android.internal.telephony.cat.CatLog;
 import com.android.internal.telephony.cat.CatResponseMessage;
 import com.android.internal.telephony.cat.TextMessage;
 import com.android.internal.telephony.GsmAlphabet;
+import com.android.internal.telephony.IccRefreshResponse;
 
 import java.util.LinkedList;
 
 import static com.android.internal.telephony.cat.CatCmdMessage.SetupEventListConstants.*;
-import static com.android.internal.telephony.CommandsInterface.SIM_REFRESH_INIT;
-import static com.android.internal.telephony.CommandsInterface.SIM_REFRESH_RESET;
 
 /**
  * SIM toolkit application level service. Interacts with Telephopny messages,
@@ -370,16 +369,18 @@ public class StkAppService extends Service implements Runnable {
             mNotificationManager.cancel(STK_NOTIFICATION_ID);
             stopSelf();
         } else {
-            int refreshResult = args.getInt("REFRESH_RESULT");
+            IccRefreshResponse state = new IccRefreshResponse();
+            state.refreshResult = IccRefreshResponse.Result
+                    .values()[args.getInt("REFRESH_RESULT")];
 
-            CatLog.d(this, "Icc Refresh Result: "+ refreshResult);
-            if ((refreshResult == SIM_REFRESH_INIT) ||
-                (refreshResult == SIM_REFRESH_RESET)) {
+            CatLog.d(this, "Icc Refresh Result: "+ state.refreshResult);
+            if ((state.refreshResult == IccRefreshResponse.Result.SIM_INIT) ||
+                (state.refreshResult == IccRefreshResponse.Result.SIM_RESET)) {
                 // Clear Idle Text
                 mNotificationManager.cancel(STK_NOTIFICATION_ID);
             }
 
-            if (refreshResult == SIM_REFRESH_RESET) {
+            if (state.refreshResult == IccRefreshResponse.Result.SIM_RESET) {
                 // Uninstall STkmenu
                 StkAppInstaller.unInstall(mContext);
             }
