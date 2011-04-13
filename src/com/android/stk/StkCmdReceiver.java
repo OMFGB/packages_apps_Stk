@@ -18,6 +18,7 @@ package com.android.stk;
 
 import com.android.internal.telephony.cat.AppInterface;
 import com.android.internal.telephony.IccRefreshResponse;
+import com.android.internal.telephony.cat.CatLog;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -97,6 +98,14 @@ public class StkCmdReceiver extends BroadcastReceiver {
     }
 
     private void handleIccStatusChange(Context context, Intent intent) {
+        // If the radio is not available then check if the StkAppService is even
+        // running before starting it to stop it right away
+        if ((intent.getBooleanExtra("RADIO_AVAILABLE", true) == false)
+                && StkAppService.getInstance() == null) {
+            CatLog.d(this, "No need to start the StkAppService just to stop it again");
+            return;
+        }
+
         Bundle args = new Bundle();
         args.putInt(StkAppService.OPCODE, StkAppService.OP_ICC_STATUS_CHANGE);
         args.putBoolean("RADIO_AVAILABLE",
